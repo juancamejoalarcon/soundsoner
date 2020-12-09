@@ -1,28 +1,80 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <Timer 
+      ref="timer"
+      @finish="onCounterFinished"
+      v-if="currentPhase === 'counting'"/>
+    <Recorder ref="recorder" @finish="recordingFinished" v-if="currentPhase === 'recording'"/>
+    <Editor 
+      ref="editor"
+      @recordAgain="addWaveToGallery"
+      @addToCar="addToCar"
+      v-if="currentPhase === 'editing'"/>
+    <button type="button" @click="startTimer" v-if="currentPhase === 'init'">Grabar</button>
+    <Gallery ref="gallery"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+
+import Timer from '@/components/Timer'
+import Recorder from '@/components/Recorder'
+import Editor from '@/components/Editor'
+import Gallery from '@/components/Gallery'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    Timer,
+    Recorder,
+    Editor,
+    Gallery
+  },
+  data () {
+    return {
+      currentPhase: 'init'
+    }
+  },
+  methods: {
+    async startTimer () {
+      this.currentPhase = 'counting';
+      await this.$nextTick()
+      this.$refs.timer.start()
+    },
+    async onCounterFinished() {
+      this.currentPhase = 'recording';
+      await this.$nextTick()
+      this.$refs.recorder.start()
+    },
+    async recordingFinished(value) {
+      this.currentPhase = 'editing';
+      await this.$nextTick()
+      this.$refs.editor.start(value)
+    },
+    addWaveToGallery(soundWave) {
+      this.$refs.gallery.add(soundWave)
+      this.startTimer()
+    },
+    addToCar(e) {
+      console.log(e)
+    }
   }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+html {
+  box-sizing: border-box;
+}
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+*:focus {
+    outline: none;
 }
 </style>
