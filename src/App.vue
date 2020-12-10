@@ -17,6 +17,8 @@
 
 <script>
 
+import axios from 'axios'
+
 import Timer from '@/components/Timer'
 import Recorder from '@/components/Recorder'
 import Editor from '@/components/Editor'
@@ -34,6 +36,11 @@ export default {
     return {
       currentPhase: 'init'
     }
+  },
+  mounted () {
+    axios
+      .get('https://api.coindesk.com/v1/bpi/currentprice.json')
+      .then(response => (console.log(response)))
   },
   methods: {
     async startTimer () {
