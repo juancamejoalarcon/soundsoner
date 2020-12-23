@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import axios from "axios";
 
 import Timer from "@/components/Timer";
 import Recorder from "@/components/Recorder";
@@ -44,9 +45,7 @@ export default {
       currentPhase: "init",
     };
   },
-  mounted() {
-
-  },
+  mounted() {},
   methods: {
     async startTimer() {
       this.currentPhase = "counting";
@@ -69,7 +68,22 @@ export default {
     },
     addToCart() {
       /*global wc_add_to_cart_params*/
-      console.log(wc_add_to_cart_params);
+      axios
+        .post(wc_add_to_cart_params.ajax_url, {
+            action: 'woocommerce_ajax_add_to_cart',
+            product_id: 'caca',
+            product_sku: '',
+            quantity: 1,
+            variation_id: 0,
+          })
+        .then(
+          (response) => {
+            console.log(response);
+          },
+          (error) => {
+            console.log(error);
+          }
+        );
     },
   },
 };
