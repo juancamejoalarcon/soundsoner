@@ -68,24 +68,20 @@ export default {
     },
     addToCart() {
       /*global wc_add_to_cart_params*/
-      axios
-        .post(wc_add_to_cart_params.ajax_url, {
-            action: 'woocommerce_ajax_add_to_cart',
-            product_id: 'caca',
-            product_sku: '',
-            quantity: 1,
-            variation_id: 0,
-          })
-        .then(
-          (response) => {
-            console.log(response);
-            console.log('caca');
-          },
-          (error) => {
-            console.log(error);
-          }
-        );
-    },
+      axios({
+            method: 'post',
+            url: wc_add_to_cart_params.ajax_url,
+            data: {
+              action: 'woocommerce_ajax_add_to_cart',
+              product_id: 'caca',
+              product_sku: '',
+              quantity: 1,
+              variation_id: 0,
+            }, headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }
+          }).then((response) => {
+            console.log('token', response);
+        }).catch((response) => console.log('error', response));
+    }
   },
 };
 </script>
