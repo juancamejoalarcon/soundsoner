@@ -13,7 +13,7 @@
     <Editor
       ref="editor"
       @recordAgain="addWaveToGallery"
-      @addToCar="addToCar"
+      @addToCar="addToCart"
       v-if="currentPhase === 'editing'"
     />
     <button type="button" @click="startTimer" v-if="currentPhase === 'init'">
@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import WooService from "@/services/WooService.js";
 
 import Timer from "@/components/Timer";
 import Recorder from "@/components/Recorder";
@@ -68,7 +67,8 @@ export default {
       this.$refs.gallery.add(soundWave);
       this.startTimer();
     },
-    addToCar(e) {
+    addToCart() {
+      /*global wc_add_to_cart_params*/
       console.log(wc_add_to_cart_params);
     },
   },
