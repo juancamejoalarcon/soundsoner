@@ -1,72 +1,78 @@
 <template>
   <div id="app">
-    <Timer 
+    <Timer
       ref="timer"
       @finish="onCounterFinished"
-      v-if="currentPhase === 'counting'"/>
-    <Recorder ref="recorder" @finish="recordingFinished" v-if="currentPhase === 'recording'"/>
-    <Editor 
+      v-if="currentPhase === 'counting'"
+    />
+    <Recorder
+      ref="recorder"
+      @finish="recordingFinished"
+      v-if="currentPhase === 'recording'"
+    />
+    <Editor
       ref="editor"
       @recordAgain="addWaveToGallery"
       @addToCar="addToCar"
-      v-if="currentPhase === 'editing'"/>
-    <button type="button" @click="startTimer" v-if="currentPhase === 'init'">Grabar</button>
-    <Gallery ref="gallery"/>
+      v-if="currentPhase === 'editing'"
+    />
+    <button type="button" @click="startTimer" v-if="currentPhase === 'init'">
+      Grabar
+    </button>
+    <button @click="addToCart">Añadir al carro</button>
+    <Gallery ref="gallery" />
   </div>
 </template>
 
 <script>
+import WooService from "@/services/WooService.js";
 
-import axios from 'axios'
-
-import Timer from '@/components/Timer'
-import Recorder from '@/components/Recorder'
-import Editor from '@/components/Editor'
-import Gallery from '@/components/Gallery'
+import Timer from "@/components/Timer";
+import Recorder from "@/components/Recorder";
+import Editor from "@/components/Editor";
+import Gallery from "@/components/Gallery";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     Timer,
     Recorder,
     Editor,
-    Gallery
+    Gallery,
   },
-  data () {
+  data() {
     return {
-      currentPhase: 'init'
-    }
+      currentPhase: "init",
+    };
   },
-  mounted () {
-    axios
-      .get('https://api.coindesk.com/v1/bpi/currentprice.json')
-      .then(response => (console.log(response)))
+  mounted() {
+
   },
   methods: {
-    async startTimer () {
-      this.currentPhase = 'counting';
-      await this.$nextTick()
-      this.$refs.timer.start()
+    async startTimer() {
+      this.currentPhase = "counting";
+      await this.$nextTick();
+      this.$refs.timer.start();
     },
     async onCounterFinished() {
-      this.currentPhase = 'recording';
-      await this.$nextTick()
-      this.$refs.recorder.start()
+      this.currentPhase = "recording";
+      await this.$nextTick();
+      this.$refs.recorder.start();
     },
     async recordingFinished(value) {
-      this.currentPhase = 'editing';
-      await this.$nextTick()
-      this.$refs.editor.start(value)
+      this.currentPhase = "editing";
+      await this.$nextTick();
+      this.$refs.editor.start(value);
     },
     addWaveToGallery(soundWave) {
-      this.$refs.gallery.add(soundWave)
-      this.startTimer()
+      this.$refs.gallery.add(soundWave);
+      this.startTimer();
     },
     addToCar(e) {
-      console.log(e)
-    }
-  }
-}
+      console.log(wc_add_to_cart_params);
+    },
+  },
+};
 </script>
 
 <style>
@@ -82,6 +88,6 @@ html {
 }
 
 *:focus {
-    outline: none;
+  outline: none;
 }
 </style>
