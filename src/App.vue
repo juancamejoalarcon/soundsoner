@@ -79,6 +79,7 @@ export default {
         .then(
           (response) => {
             console.log(response);
+            console.log('caca');
           },
           (error) => {
             console.log(error);
