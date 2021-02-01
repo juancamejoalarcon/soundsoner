@@ -27,7 +27,6 @@ export default {
       this.gallery.unshift(soundWave)
       await this.$nextTick()
       this.createItems()
-      console.log(this.gallery)
     },
     createItems() {
       this.gallery.forEach(item => {

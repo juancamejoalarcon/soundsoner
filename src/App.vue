@@ -13,19 +13,16 @@
     <Editor
       ref="editor"
       @recordAgain="addWaveToGallery"
-      @addToCar="addToCart"
       v-if="currentPhase === 'editing'"
     />
     <button type="button" @click="startTimer" v-if="currentPhase === 'init'">
       Grabar
     </button>
-    <button @click="addToCart">Añadir al carro</button>
     <Gallery ref="gallery" />
   </div>
 </template>
 
 <script>
-import axios from "axios";
 
 import Timer from "@/components/Timer";
 import Recorder from "@/components/Recorder";
@@ -44,6 +41,12 @@ export default {
     return {
       currentPhase: "init",
     };
+  },
+  created() {
+    window.soundSonner = {
+      params: null,
+      blob: null,
+    }
   },
   mounted() {},
   methods: {
@@ -66,22 +69,6 @@ export default {
       this.$refs.gallery.add(soundWave);
       this.startTimer();
     },
-    addToCart() {
-      /*global wc_add_to_cart_params*/
-      axios({
-            method: 'post',
-            url: wc_add_to_cart_params.ajax_url,
-            data: {
-              action: 'woocommerce_ajax_add_to_cart',
-              product_id: 'caca',
-              product_sku: '',
-              quantity: 1,
-              variation_id: 0,
-            }, headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }
-          }).then((response) => {
-            console.log('token', response);
-        }).catch((response) => console.log('error', response));
-    }
   },
 };
 </script>

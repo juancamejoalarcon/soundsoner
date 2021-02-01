@@ -7,7 +7,6 @@
       <div class="editor__menu">
         <button type="button" ref="play">Play</button>
         <button type="button" @click="recordAgain">Grabar otro</button>
-        <button type="button" @click="addToCar">Añadir al carrito</button>
         <div class="color-picker">
           <input type="color" value="#ff0000" @input="changeWave">
           <label>Color ola</label>
@@ -57,11 +56,12 @@ export default {
   methods: {
     start(blob) {
       this.blob = blob;
+
       this.createWave()
     },
     createWave() {
       if (this.wavesurferEditor) this.wavesurferEditor.destroy()
-      this.wavesurferEditor = WaveSurfer.create({
+      const waveParams = {
           container: '#waveeditor',
           barWidth: this.barWidth,
           barHeight: this.barHeight,
@@ -69,8 +69,10 @@ export default {
           height: this.height,
           backgroundColor: this.backgroundColor,
           waveColor: this.waveColor,
-      });
-
+      }
+      this.wavesurferEditor = WaveSurfer.create(waveParams);
+      window.soundSonner.params = waveParams;
+      window.soundSonner.blob = this.blob;
       this.wavesurferEditor.on('error', function(e) {
           console.warn(e);
       });
