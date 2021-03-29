@@ -1,91 +1,110 @@
 <template>
-  <div id="app">
-    <Timer
-      ref="timer"
-      @finish="onCounterFinished"
-      v-if="currentPhase === 'counting'"
+  <span>
+    <Player
+      :type="json.type"
+      :custom_image="json.custom_image"
+      :soundwave="json.soundwave"
+      :song_title="json.song_title"
+      :song_artist="json.song_artist"
+      :album_image="json.album_image"
+      :images="images"
+      :drawPos="json.drawPos"
+      :scale="json.scale"
+      :shape="json.shape"
+      :watermark="true"
+      :mode="'cart'"
+      :class="{ 'cart': type === 'cart'}"
+    v-if="type === 'cart'" />
+    <!-- <img :src="json.checkout_image" alt="product" v-if="type === 'cart'"> -->
+    <Order
+      :soundsonner="json"
+     v-else-if=" type === 'order'" />
+    <Editor 
+      v-else-if="type === 'editor'"
+      :order="order"
+      />
+    <Downloader v-else-if="type === 'downloader'"
+      :soundsonner="json"
     />
-    <Recorder
-      ref="recorder"
-      @finish="recordingFinished"
-      v-if="currentPhase === 'recording'"
-    />
-    <Editor
-      ref="editor"
-      @recordAgain="addWaveToGallery"
-      v-if="currentPhase === 'editing'"
-    />
-    <button type="button" @click="startTimer" v-if="currentPhase === 'init'">
-      Grabar
-    </button>
-    <Gallery ref="gallery" />
-  </div>
+    <Form v-else />
+  </span>
 </template>
 
 <script>
-
-import Timer from "@/components/Timer";
-import Recorder from "@/components/Recorder";
-import Editor from "@/components/Editor";
-import Gallery from "@/components/Gallery";
+import images from './services/images'
+import Form from './components/Form.vue'
+import Editor from './components/Editor.vue'
+import Downloader from './components/Downloader.vue'
+import Order from './components/Order.vue'
+import Player from './components/Player.vue'
 
 export default {
-  name: "App",
+  name: 'App',
   components: {
-    Timer,
-    Recorder,
+    Form,
     Editor,
-    Gallery,
+    Downloader,
+    Order,
+    Player
   },
   data() {
+    let json = this.$parent.json ? JSON.parse(atob(this.$parent.json)) : null
+    if (this.$parent.type === 'order' || this.$parent.type === 'downloader') json = json.soundsonner
+    if (this.$parent.type === 'cart') {
+      json = JSON.parse(document.querySelector('#json-content-soundsonner').textContent)
+    }
     return {
-      currentPhase: "init",
-    };
-  },
-  created() {
-    window.soundSonner = {
-      params: null,
-      blob: null,
+      images,
+      type: this.$parent.type,
+      json,
+      order: this.$parent.order
     }
   },
-  mounted() {},
-  methods: {
-    async startTimer() {
-      this.currentPhase = "counting";
-      await this.$nextTick();
-      this.$refs.timer.start();
-    },
-    async onCounterFinished() {
-      this.currentPhase = "recording";
-      await this.$nextTick();
-      this.$refs.recorder.start();
-    },
-    async recordingFinished(value) {
-      this.currentPhase = "editing";
-      await this.$nextTick();
-      this.$refs.editor.start(value);
-    },
-    addWaveToGallery(soundWave) {
-      this.$refs.gallery.add(soundWave);
-      this.startTimer();
-    },
+  mounted() {
+    if (this.type === 'cart') {
+      window.addEventListener('resize', this.resize)
+      this.resize()
+    }
   },
-};
+  methods: {
+    resize() {
+      if( window.innerWidth < 1052 && window.innerWidth > 773) {
+        document.querySelector('.form__spotify-player__container').classList.add('cart-modifier')
+      } else {
+        document.querySelector('.form__spotify-player__container').classList.remove('cart-modifier')
+      }
+    }
+  }
+}
 </script>
 
 <style>
-html {
-  box-sizing: border-box;
+.form__spotify-player.cart {
+  box-shadow: none !important;
 }
-*,
-*::before,
-*::after {
-  box-sizing: inherit;
-  margin: 0;
-  padding: 0;
+.cart > .watermark-logo.cart-modifier:before {
+        background-size: 53vw;
+      position: absolute;
+      max-width: 59vw;
+      margin-left: -14vw;
+      width: 59vw;
+      height: 6vw;
+      margin-top: 22vw;
+}
+@media only screen and (min-width: 1000px) {
+  .cart > .watermark-logo:before {
+    background-size: 613px;
+    position: absolute;
+    max-width: 775px;
+    margin-left: -197px;
+    width: 765px;
+    height: 200px;
+    margin-top: 200px;
+    opacity: .08;
+    transform: rotate(-64deg);
+    background-position: 50%;
+    background-repeat: no-repeat;
+  }
 }
 
-*:focus {
-  outline: none;
-}
 </style>
