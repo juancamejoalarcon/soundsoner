@@ -55,8 +55,7 @@ export default {
       save() {
           if (window.soundsoner) {
               this.amazonObj.soundsonner = window.soundsoner
-              AWS.saveObj(this.order, this.amazonObj).then((data) => {
-                  console.log(data)
+              AWS.saveObj(this.order, this.amazonObj).then(() => {
                   this.closeModal()
               })
           }

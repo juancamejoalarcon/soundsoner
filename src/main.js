@@ -18,9 +18,12 @@ Vue.use(VuejsClipper);
 Vue.use(VueRx)
 Vue.use(Toasted)
 
-
 // wc_order_77foSntfDHe3B
 const el = document.getElementById('soundsoner-root')
+window.showHideSpinner = (forceHide = false) => {
+  if (forceHide) document.querySelector('.loader-spinner').hidden = true
+  else document.querySelector('.loader-spinner').hidden = !document.querySelector('.loader-spinner').hidden
+}
 if (el) {
   const type = el.getAttribute('type')
   const json = el.getAttribute('data-json')

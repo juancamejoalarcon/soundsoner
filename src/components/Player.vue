@@ -1,11 +1,28 @@
 <template>
+<span>
+    <!-- <div class="controls" v-if="type === 'personal' && mode === 'form'">
+        <div class="clipper-rage-container">
+            <span> Rotar: </span>
+            <clipper-range class="clipper-range-wrapper" v-model="rotation" style="max-width:200px" :min="0" :max="360"></clipper-range>
+        </div>
+        <div class="controls-zoom">
+            <span> Zoom: </span>
+            <input type="range" min="0" max="300" value="100" @input="zoom">
+        </div>
+    </div> -->
     <div class="form__spotify-player" ref="player">
+        <div class="controls-zoom" v-if="type === 'personal' && mode === 'form'">
+            <div class="controls-zoom__button">
+                <button type="button" @click="zoom(false)">-</button>
+                <button type="button" @click="zoom(true)">+</button>
+            </div>
+        </div>
         <div class="form__spotify-player__container" 
         :class="{ 
             'watermark-logo': watermark,
             'border-none': mode === 'order' 
             }">
-            <div class="form__spotify-player__image">
+            <div class="form__spotify-player__image mask-image mask-image-circle">
                 <img :src="album_image" v-if="type === 'spotify'">
                 <clipper-fixed  v-if="type === 'personal'" 
                     class="basic lg clipper-fixed" 
@@ -16,7 +33,8 @@
                     shadow="rgba(0,0,0,0)"
                     :area="100"
                     ref="clipper"
-                    
+                    @load="imgLoad"
+                    :rotate="rotation"
                         ></clipper-fixed>
                 <clipper-preview name="fixed-preview" class="basic lg clipper-fixed" v-if="mode === 'order' || mode === 'cart'"></clipper-preview>
             </div>
@@ -25,8 +43,8 @@
             </div>
             <div class="form__spotify-player__info">
                 <div class="form__spotify-player__info__song">
-                    <span class="form__spotify-player__info__song__name">{{ song_title ? song_title : 'Título de la canción'}}</span>
-                    <span>{{ song_artist ? song_artist : 'Nombre del artista' }}</span>
+                    <span class="form__spotify-player__info__song__name">{{ filteredTitle ? filteredTitle : 'Título de la canción'}}</span>
+                    <span>{{ filteredArtist ? filteredArtist : 'Nombre del artista' }}</span>
                 </div>
                 <div class="form__spotify-player__info__like">
                     <img :src="images.like">
@@ -37,10 +55,12 @@
             </div>
         </div>
     </div>
+    </span>
 </template>
 
 <script>
 
+import AWS from '../services/s3.service'
 import utils from '../services/utilis.service'
 
 export default {
@@ -100,6 +120,10 @@ export default {
   },
   data() {
       return {
+          inited: false,
+          filteredTitle: '',
+          filteredArtist: '',
+          rotation: 0
       }
   },
     watch: { 
@@ -107,15 +131,17 @@ export default {
             if (newVal === 'personal') {
                 this.setClipper()
             }
-        }
+        },
+        song_title: function () { this.filterTitleAndArtist() },
+        song_artist: function () { this.filterTitleAndArtist() }
     },
   mounted() {
       this.custom_image === this.images.custom_image
+    //   if (this.type === 'personal' && this.mode === 'form') document.querySelector('.clipper-range > div').style.width = "140px";
       if (this.mode === 'order' || this.mode === 'cart') {
           utils.setShape(this.$refs.player.querySelector('.form__spotify-player__image'), this.shape)
       }
-      console.log(this.type)
-      if ((this.mode === 'order' || this.mode === 'cart') && this.type === 'personal') {
+      if (this.mode === 'order' && this.type === 'personal') {
           setTimeout(() => {
             this.$refs.clipper.setTL$.next(this.drawPos)
             this.$refs.clipper.setWH$.next(this.scale)
@@ -124,6 +150,19 @@ export default {
             }, 100)
           }, 200)
         }
+    if (this.mode === 'cart' && this.type === 'personal') {
+        AWS.getObj(this.custom_image, false, 'soundsonner-data-tmp').then((data) => {
+            this.custom_image = data.custom_image
+            setTimeout(() => {
+                this.$refs.clipper.setTL$.next(this.drawPos)
+                this.$refs.clipper.setWH$.next(this.scale)
+                setTimeout(() => {
+                    document.querySelector('.js-clipper-fixed').hidden = true
+                }, 100)
+            }, 200)
+        })
+    }
+    this.filterTitleAndArtist()
   },
   methods: {
       setClipper() {
@@ -133,7 +172,28 @@ export default {
                 if (typeof e  === 'number') window.scale = e
                 if (typeof e  === 'object') window.drawPos = e
             })
+            // document.querySelector('.clipper-range > div').style.width = "140px";
         }, 10)
+      },
+      imgLoad() {
+          if (this.inited && typeof this.custom_image === 'string') {
+              const imageHeight = document.querySelector('.vuejs-clipper-fixed__img.js-img').clientHeight
+              const wrapperHeight = document.querySelector('.vuejs-clipper-fixed__wrap.js-wrap').clientHeight
+              if (wrapperHeight > imageHeight) {
+                  this.$refs.clipper.setWH$.next(wrapperHeight / imageHeight)
+              }
+          }
+          this.inited = true
+      },
+      zoom(plus) {
+        //   const val = parseInt(e.target.value) / 100
+          this.$refs.clipper.setWH$.next(plus ? window.scale + 0.1 : window.scale - 0.1)
+      },
+      filterTitleAndArtist() {
+          if (this.song_title.length > 76) this.filteredTitle = this.song_title.substring(0, 76) + '...'
+          else this.filteredTitle = this.song_title
+          if (this.song_artist.length > 78) this.filteredArtist = this.song_artist.substring(0, 78) + '...'
+          else this.filteredArtist = this.song_artist
       }
   }
 }
@@ -141,6 +201,137 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+input[type=range] {
+  width: 100%;
+  margin: 12px 0;
+  background-color: transparent;
+  -webkit-appearance: none;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  background: #3071a9;
+  border: 0;
+  border-radius: 2.8px;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  margin-top: -12px;
+  width: 10px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid #000000;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #367ebd;
+}
+input[type=range]::-moz-range-track {
+  background: #3071a9;
+  border: 0;
+  border-radius: 2.8px;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 10px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid #000000;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  background: transparent;
+  border-color: transparent;
+  border-width: 17px 0;
+  color: transparent;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-ms-fill-lower {
+  background: #2a6495;
+  border: 0;
+  border-radius: 5.6px;
+}
+input[type=range]::-ms-fill-upper {
+  background: #3071a9;
+  border: 0;
+  border-radius: 5.6px;
+}
+input[type=range]::-ms-thumb {
+  width: 10px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid #000000;
+  cursor: pointer;
+  margin-top: 0px;
+  /*Needed to keep the Edge thumb centred*/
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #3071a9;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #367ebd;
+}
+/*TODO: Use one of the selectors from https://stackoverflow.com/a/20541859/7077589 and figure out
+how to remove the virtical space around the range input in IE*/
+@supports (-ms-ime-align:auto) {
+  /* Pre-Chromium Edge only styles, selector taken from hhttps://stackoverflow.com/a/32202953/7077589 */
+  input[type=range] {
+    margin: 0;
+    /*Edge starts the margin from the thumb, not the track as other browsers do*/
+  }
+}
+
+
+.controls {
+    display: flex;
+    align-items: center;
+    max-width: 450px;
+    justify-content: center;
+    padding: 5px;
+    /* padding-left: 18px; */
+}
+.controls-zoom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.controls-zoom__button {
+    width: 100%;
+    display: flex;
+    height: 40px;
+}
+
+.controls-zoom__button button {
+    width: 100%;
+    color: black;
+    border: 1px solid #e3e3e3;
+    border-bottom: none;
+    background-color: #ebebebdc;
+    cursor: pointer;
+    font-size: 33px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.controls-zoom__button button:hover {
+    background-color: #bdbcbc;
+}
+.controls-zoom > span {
+    padding-right: 8px;
+}
+.clipper-rage-container {
+    display: flex;
+    align-items: center;
+}
 .vuejs-clipper-fixed__img-center {
     top: 51% !important;
 }
@@ -166,6 +357,7 @@ export default {
 
 .watermark-logo::before {
     content: "";
+    z-index: 9;
     pointer-events:none;
     background-size: 775px;
     position: absolute;

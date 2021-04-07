@@ -21,6 +21,7 @@
     "spotify-web-api-js": "^1.5.1",
     "vue": "^2.6.11",
     "vue-rx": "^6.2.0",
+    "vue-spinner": "^1.0.4",
     "vue-toasted": "^1.1.28",
     "vuejs-clipper": "^3.1.2",
     "wavesurfer.js": "^4.2.0",

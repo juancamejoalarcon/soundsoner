@@ -32,6 +32,9 @@
                                 @change="search" 
                                 v-model="searchInput"
                                 ref="search">
+                            <svg class="spinner" viewBox="0 0 50 50" v-if="loading_spoti">
+                                <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                            </svg>
                             <div class="form__inputs__text__songs" v-if="display_list">
                                 <div class="form__inputs__text__songs__container">
                                     <div class="form__inputs__text__songs__song" v-for="item in items" :key="item.id" @click="selectSong(item)">
@@ -72,7 +75,9 @@
                     :song_artist="song_artist"
                     :album_image="album_image"
                     :images="images"
+                    :shape="shape"
                     :watermark="watermark"
+                    :mode="'form'"
                 />
                 </div>
                 <div class="form__shapes">
@@ -113,7 +118,9 @@
                     :song_artist="song_artist"
                     :album_image="album_image"
                     :images="images"
+                    :shape="shape"
                     :watermark="watermark"
+                    :mode="'form'"
                 />
             </div>
         </div>
@@ -124,6 +131,7 @@
 import imageCompression from 'browser-image-compression';
 import { debounce } from "debounce";
 import spotifyService from '../services/spotify.service'
+import AWS from '../services/s3.service'
 import utils from '../services/utilis.service'
 import images from '../services/images'
 import Player from './Player'
@@ -151,7 +159,8 @@ export default {
           shape: 'classic',
           custom_image: images.default,
           isMobile: window.innerWidth < 1000,
-          watermark: true
+          watermark: true,
+          loading_spoti: false,
       }
   },
     watch: { 
@@ -164,15 +173,25 @@ export default {
   mounted() {
       window.getImageFronDiv = () => {
         return new Promise((resolve) => {
-            this.setWindowObj()
-            resolve()
+            if (this.type === 'personal') {
+                window.showHideSpinner()
+                const identifier = '_' + Math.random().toString(36).substr(2, 9);
+                AWS.saveObj(identifier, { custom_image: window.custom_image }, 'soundsonner-data-tmp').then(() => {
+                    this.setWindowObj(identifier)
+                    resolve()
+                 })
+            } else {
+                this.setWindowObj()
+                resolve()
+            }
         })
       };
       window.soundsonnerToastError = (error) => {
           this.$toasted.show(error, { 
               theme: "bubble", 
-              position: "bottom-right", 
-              duration : 5000
+              position: "bottom-center", 
+              duration : 5000,
+              fullWidth: true
             });
       }
       window.addEventListener('resize', this.onResize)
@@ -180,9 +199,6 @@ export default {
       if (window.location.href.indexOf("wp-admin") != -1) this.watermark = false
   },
   methods: {
-      getImgUrl(pic) {
-          return require('../assets/' + pic)
-      },
       onBlur() {
           setTimeout(() => { this.display_list = false }, 200);
       },
@@ -192,12 +208,17 @@ export default {
           this.setWindowObj()
       },
       search: debounce(function (){
-        spotifyService.getSpotify(this.searchInput).then((data) => {
-            if (data.tracks) {
-                this.items = data.tracks.items
-                this.tracks = data.tracks
-            }
-        }) 
+          if (this.searchInput) {
+            this.loading_spoti = true
+            spotifyService.getSpotify(this.searchInput).then((data) => {
+                if (data.tracks) {
+                    if (data.tracks.items) this.items = data.tracks.items
+                    this.tracks = data.tracks
+                }
+            }).finally(() => {
+                this.loading_spoti = false
+            })
+          }
     }, 200),
     getArtists (list) {
         return list.reduce((accumulator, currentValue, index) => {
@@ -214,7 +235,7 @@ export default {
         this.searchInput = item.name
         this.setWindowObj()
     },
-    setWindowObj () {
+    setWindowObj (identifier = '') {
         window.soundsoner = {
             song_id: this.song_id,
             soundwave: this.soundwave,
@@ -223,7 +244,7 @@ export default {
             song_title: this.song_title,
             type: this.type,
             shape: this.shape,
-            custom_image: window.custom_image,
+            custom_image: identifier,
             drawPos: window.drawPos,
             scale: window.scale,
         }
@@ -257,7 +278,6 @@ export default {
                     resolve(compressedFile)
                 })
                 .catch(function (error) {
-                    console.log(error.message);
                     reject(error.message)
             });
         });
@@ -265,7 +285,6 @@ export default {
     getBase64(file) {
         return new Promise((resolve, reject) => { 
             const sizeInMB = (file.size / (1024*1024)).toFixed(2);
-            console.log(file)
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
@@ -275,7 +294,6 @@ export default {
                         var blobReader = new FileReader();
                         blobReader.readAsDataURL(compressedImageBlob); 
                         blobReader.onloadend = () => {
-                            console.log(this.custom_image);
                             this.custom_image = blobReader.result
                             resolve(blobReader.result)
                         }
@@ -291,10 +309,13 @@ export default {
         })
     },
     onUploadImage() {
+        window.showHideSpinner()
         const file = this.$refs.form.querySelector('input[type="file"]').files[0];
-        // window.custom_image = this.custom_image;
         this.getBase64(file).then((base64) => {
+            window.showHideSpinner()
             window.custom_image = base64
+        }).finally(() => {
+            window.showHideSpinner(true)
         })
     }
   }
@@ -346,5 +367,43 @@ export default {
 .form__player__container > .form__spotify-player {
     padding-right: 0px;
 }
+
+.spinner {
+  animation: rotate 2s linear infinite;
+  z-index: 2;
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  margin-left: -44px;
+  margin-top: 8px;
+}
+
+.spinner > .path {
+    stroke: #01756f;
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
 
 </style>

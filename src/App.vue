@@ -1,5 +1,8 @@
 <template>
   <span>
+    <div class="loader-spinner" hidden>
+      <pulse-loader :loading="true" :color="'#5dc596'" :size="'35px'"></pulse-loader>
+    </div>
     <Player
       :type="json.type"
       :custom_image="json.custom_image"
@@ -37,6 +40,7 @@ import Editor from './components/Editor.vue'
 import Downloader from './components/Downloader.vue'
 import Order from './components/Order.vue'
 import Player from './components/Player.vue'
+import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 
 export default {
   name: 'App',
@@ -45,7 +49,8 @@ export default {
     Editor,
     Downloader,
     Order,
-    Player
+    Player,
+    PulseLoader
   },
   data() {
     let json = this.$parent.json ? JSON.parse(atob(this.$parent.json)) : null
@@ -79,6 +84,18 @@ export default {
 </script>
 
 <style>
+.loader-spinner {
+  z-index: 99;
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #01756f69;
+  top: 0;
+  right: 0;
+}
 .form__spotify-player.cart {
   box-shadow: none !important;
 }

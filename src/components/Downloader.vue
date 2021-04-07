@@ -24,7 +24,6 @@ export default {
     };
   },
   mounted() {
-    // console.log(this.soundsonner)
     this.downloadPDF()
     const header = document.querySelector('header');
     if (header) header.hidden = true;
